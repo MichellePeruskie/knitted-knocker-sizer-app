@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Knitted Knockers Sizer</title>
+  <link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <img class="logo" src="images/logo-kk-stacked-MEDIUM.png" alt="Knitted Knockers">
+      <h1>Knitted Knockers Sizer — Cup size to send</h1>
+      <p>Enter the recipient's <strong>bra size</strong> and select a region. This page uses the cup diameter to recommend the size of knocker to send the recipient. You can view more information on sizing and find approved patterns on the Knitted Knockers <a href="https://www.knittedknockers.org/downloads/" target="_blank">Downloads</a> page.</p>
+    </header>
+
+    <div class="card">
+      <h3>Input</h3>
+      <label for="region">Country / Region</label>
+      <select id="region">
+        <option value="US">United States / Canada (US/CA)</option>
+        <option value="UK">United Kingdom (UK)</option>
+        <option value="EU">Europe (EU)</option>
+        <option value="AU">Australia / New Zealand (AU/NZ)</option>
+        <option value="JP">Japan (JP)</option>
+        <option value="CN">China (CN)</option>
+        <option value="IN">India (IN)</option>
+      </select>
+
+      <label for="bra" style="margin-top:12px;display:block;">Bra size</label>
+      <input id="bra" type="text" placeholder="e.g., 38D (US/UK), 90C (EU/CN), 14DD (AU), 75F (JP)">
+      <div style="margin-top:12px;display:flex;gap:8px;">
+        <button id="calcBtn">Get Recommendation</button>
+        <button id="resetBtn" class="secondary">Reset</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Volunteer Instruction</h3>
+      <div id="out" class="result">—</div>
+    </div>
+
+    <footer>
+      <p>Knitted Knockers is a volunteer-run nonprofit whose mission is to connect knitters and crocheters with breast cancer survivors. <a href="https://www.knittedknockers.org/" target="_blank">Learn more</a>.</p>
+    </footer>
+  </div>
+
+  <script src="assets/app.js"></script>
+</body>
+</html>
