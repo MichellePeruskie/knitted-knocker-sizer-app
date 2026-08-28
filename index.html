@@ -11,7 +11,8 @@
     <header>
       <img class="logo" src="images/logo-kk-stacked-MEDIUM.png" alt="Knitted Knockers">
       <h1>Knitted Knockers Sizer</h1>
-      <p>Enter the recipient's <strong>bra size</strong> to find the target finished diameter listed on the Knitted Knockers bra sizing chart. This helps account for the fact that the same cup letter has a different physical size at different band sizes.</p>
+      <p>Enter the recipient's <strong>bra size</strong> to check whether the requested Knocker size is appropriate for that band size. The tool uses the Knitted Knockers bra sizing chart as a guardrail for unusual band/cup combinations.</p>
+      <p>Most recipients will receive the cup size they requested. The recommendation changes only when the charted bra diameter differs from the standard finished Knocker diameter by more than 1 inch.</p>
       <p>You can find approved patterns and additional sizing information on the Knitted Knockers <a href="https://www.knittedknockers.org/downloads/" target="_blank" rel="noopener">Downloads</a> page.</p>
     </header>
 
@@ -24,20 +25,21 @@
       </select>
 
       <label for="bra" style="margin-top:12px;display:block;">Bra size</label>
-      <input id="bra" type="text" placeholder="e.g., 38D, 44F, 34FF" autocomplete="off">
+      <input id="bra" type="text" placeholder="e.g., 38D, 44B, 34FF" autocomplete="off">
       <div style="margin-top:12px;display:flex;gap:8px;">
-        <button id="calcBtn">Get Diameter</button>
+        <button id="calcBtn">Get Recommendation</button>
         <button id="resetBtn" class="secondary">Reset</button>
       </div>
     </div>
 
     <div class="card">
-      <h3>Target size</h3>
+      <h3>Volunteer recommendation</h3>
       <div id="out" class="result">—</div>
     </div>
 
     <footer>
-      <p>This tool follows the bra sizes and cup diameters listed on the Knitted Knockers sizing chart and does not estimate sizes outside that chart. If a size is not listed, contact Knitted Knockers for sizing guidance.</p>
+      <p>This tool follows the bra-size and cup-diameter relationships listed on the Knitted Knockers sizing chart. It keeps the requested cup as the default and adjusts only clear outlier combinations rather than trying to make the finished Knocker fill the entire bra cup.</p>
+      <p>If a size is not listed on the chart or cannot be mapped safely to a standard Knitted Knockers pattern size, contact Knitted Knockers for sizing guidance.</p>
       <p>Knitted Knockers is a volunteer-run nonprofit whose mission is to connect knitters and crocheters with breast cancer survivors. <a href="https://www.knittedknockers.org/" target="_blank" rel="noopener">Learn more</a>.</p>
     </footer>
   </div>
