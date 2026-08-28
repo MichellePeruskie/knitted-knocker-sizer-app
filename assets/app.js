@@ -2,14 +2,14 @@
  * Knitted Knockers bra-size lookup and conservative outlier adjustment.
  *
  * Source of truth: Knitted Knockers US/UK bra sizing chart.
- * Explicit charted sizes are looked up directly. For common band/cup combinations
- * that continue the same sister-size progression beyond the printed grid, the app
- * derives the corresponding underwire row only when it remains inside the chart's
- * published underwire range (30-60).
+ * Explicit charted sizes are looked up directly. For common US sizes that use
+ * alternate cup labels (for example DD instead of E), aliases are normalized
+ * before lookup. Unprinted sizes may continue the same sister-size progression
+ * only when the resulting underwire remains inside the published 30-60 range.
  *
- * A recipient's requested cup remains the default recommendation. The app changes
- * the Knocker size only when the charted bra diameter and the standard finished
- * Knocker diameter differ by MORE than 1 inch.
+ * The requested Knocker cup remains the default recommendation. It changes only
+ * when the charted bra diameter differs from the standard finished Knocker
+ * diameter by MORE than 1 inch.
  */
 
 const DIAMETER_BY_UNDERWIRE = {
@@ -109,17 +109,14 @@ function splitSize(size) {
   return match ? { band: Number(match[1]), cup: match[2] } : null;
 }
 
-/* The printed US chart uses E/F/G where many US bras are labeled DD/DDD/DDDD. */
-function chartCupAlias(region, cup) {
-  if (region !== 'US') return cup;
-  if (cup === 'DD') return 'E';
-  if (cup === 'DDD') return 'F';
-  if (cup === 'DDDD') return 'G';
-  return cup;
-}
-
-function chartKeyFor(region, band, cup) {
-  return String(band) + chartCupAlias(region, cup);
+/* US bra labels commonly use DD/E, DDD/F and DDDD/G for the same progression. */
+function usChartCup(cup) {
+  const aliases = {
+    DD: 'E',
+    DDD: 'F',
+    DDDD: 'G'
+  };
+  return aliases[cup] || cup;
 }
 
 function knockerIndexForCup(cup) {
@@ -131,17 +128,12 @@ function formatKnockerDiameter(value) {
   return Number.isInteger(value) ? `${whole}″` : `${whole} 1/2″`;
 }
 
-/*
- * Derive an underwire row only when the size follows the same sister-size
- * progression visible in the official chart. B is the neutral point:
- * every cup step changes the underwire by 2, while every band step changes it by 2.
- */
 function inferUSUnderwire(band, cup) {
-  const canonical = chartCupAlias('US', cup);
   const ladder = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P'];
-  const cupIndex = ladder.indexOf(canonical);
-  if (cupIndex < 0) return null;
+  const canonicalCup = usChartCup(cup);
+  const cupIndex = ladder.indexOf(canonicalCup);
   const bIndex = ladder.indexOf('B');
+  if (cupIndex < 0) return null;
   const underwire = band + ((cupIndex - bIndex) * 2);
   return (underwire >= 30 && underwire <= 60 && underwire % 2 === 0) ? underwire : null;
 }
@@ -149,15 +141,24 @@ function inferUSUnderwire(band, cup) {
 function inferUKUnderwire(band, cup) {
   const ladder = ['A','B','C','D','DD','E','F','FF','G','GG','H','HH','J','JJ','K','KK'];
   const cupIndex = ladder.indexOf(cup);
-  if (cupIndex < 0) return null;
   const bIndex = ladder.indexOf('B');
+  if (cupIndex < 0) return null;
   const underwire = band + ((cupIndex - bIndex) * 2);
   return (underwire >= 30 && underwire <= 60 && underwire % 2 === 0) ? underwire : null;
 }
 
 function resolveUnderwire(region, band, cup) {
-  const explicit = SIZE_LOOKUP[region]?.[chartKeyFor(region, band, cup)];
-  if (explicit) return { underwire: explicit, inferred: false };
+  /* First honor an exact chart entry. */
+  const rawKey = String(band) + cup;
+  const exact = SIZE_LOOKUP[region]?.[rawKey];
+  if (exact) return { underwire: exact, inferred: false };
+
+  /* For US labels, try the equivalent chart cup before inferring. */
+  if (region === 'US') {
+    const aliasedKey = String(band) + usChartCup(cup);
+    const aliased = SIZE_LOOKUP.US[aliasedKey];
+    if (aliased) return { underwire: aliased, inferred: false };
+  }
 
   const inferred = region === 'US'
     ? inferUSUnderwire(band, cup)
