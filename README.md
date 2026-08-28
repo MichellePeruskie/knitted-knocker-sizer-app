@@ -1,87 +1,60 @@
 # Knitted Knockers Sizer
 
-A tiny, static web app that converts a **bra size** (e.g. `38D`) plus **region** (US/UK/EU/AU/JP/CN/IN) into a **recommended knitted knocker size**.  
-It uses the **underwire→diameter chart** as the single source of truth for diameter, applies **sister sizing**, and gives a simple volunteer-friendly output:
+A small static web app that converts a recipient's **US or UK bra size** into the **target finished diameter** listed on the Knitted Knockers bra sizing chart.
 
-- **Diameter:** `5 1/2″ (14.0 cm)`
-- **Knocker size to send:** `DD (E) + 1 row` *(rows max out at +1)*
+The problem it addresses is simple but important: a cup letter does not represent one fixed physical size. A B cup on a larger band can require a substantially larger finished knocker than a B cup on a smaller band. The tool lets a volunteer enter the recipient's full bra size and get the charted physical diameter directly.
 
-> If the computed underwire falls outside the chart (30–60), the app asks the user to **contact Knitted Knockers HQ** and nudges them to double-check the Country/Region when it looks mismatched (for example, an EU band size entered while US is selected).
+## Source-of-truth approach
 
----
+The app intentionally follows the Knitted Knockers bra sizing chart as a literal lookup table rather than attempting to improve on or extrapolate from it.
+
+- US and UK sizes are encoded exactly by chart row.
+- Each chart row maps to the published underwire diameter in inches and centimeters.
+- The result is the **target finished diameter**.
+- The app does **not** recommend extra knitted/crocheted rows.
+- The app does **not** infer unlisted bra sizes.
+- The app does **not** convert additional international sizing systems because those conversions are not part of this source chart.
+- If a size is not present in the chart, the volunteer is directed to Knitted Knockers for sizing guidance.
+
+This deliberately keeps the tool close to the organization's published guidance and avoids introducing additional sizing assumptions.
+
+## Example
+
+For a charted size, the volunteer-facing result is intentionally simple:
+
+**Target finished diameter: 7 1/2″ (19.0 cm)**
 
 ## Live link
+
 https://michelleperuskie.github.io/knitted-knocker-sizer-app/
-
-
----
 
 ## Folder structure
 
+```text
 knitted-knocker-sizer-app/
 ├─ index.html
 ├─ assets/
-│ ├─ app.css
-│ └─ app.js
+│  ├─ app.css
+│  └─ app.js
 └─ images/
-└─ logo-kk-stacked-MEDIUM.png
-
-
-- All paths in `index.html` are **relative** (`assets/...`, `images/...`) so it works anywhere (localhost, GitHub Pages).
-
----
+   └─ logo-kk-stacked-MEDIUM.png
+```
 
 ## How to run locally
 
-### Quick-open
-- Double-click `index.html` (or right-click → “Open with” → your browser).
+Open `index.html` in a browser, or use a local static server such as VS Code Live Server.
 
-### Recommended (auto reload)
-- Use the **Live Server** extension (VS Code).
-  - Open the folder in VS Code → install “Live Server” → right-click `index.html` → **Open with Live Server**.
+## Publishing
 
----
+The app is hosted with GitHub Pages from the `main` branch. Changes committed to `main` are redeployed automatically.
 
-## Publish (GitHub Pages)
+## Technical notes
 
-1. **Push your files** to this repo (see steps below).
-2. In the repo: **Settings → Pages**  
-   - **Source:** `Deploy from a branch`  
-   - **Branch:** `main` — **Folder:** `/ (root)`  
-   - Save.
-3. Wait for the green “Pages build and deployment” check (Actions tab).
-4. Visit your site at:
-
-https://michelleperuskie.github.io/knitted-knocker-sizer-app/
-
-(Hard refresh if you’re updating: `Ctrl+F5` / `Cmd+Shift+R`.)
-
----
-
-## Updating the app
-
-- Edit files locally → **commit** → **push** to `main`.  
-- GitHub Pages will redeploy automatically.  
-- Bust cache with a hard refresh if you don’t see changes right away.
-
----
-
-## Tech notes
-
-- **No frameworks**, just vanilla HTML/CSS/JS.
-- **Chart values** (underwire → cm/in) are baked into `assets/app.js`.
-- **Rounding**: diameters **display** as nearest 1/6″ (chart style). Recommendation **calculates** using **¼″ rounded up**, with **at most one extra row**.
-- **DD/E** is displayed as `DD (E)` for US/UK/AU and `E (DD)` elsewhere.
-
----
+- No frameworks; vanilla HTML, CSS, and JavaScript.
+- `assets/app.js` contains the chart's US and UK bra-size rows and the corresponding underwire-to-diameter values.
+- Lookup is deterministic: a charted bra size returns the diameter from its chart row.
+- No sister-size formula, cup-offset calculation, quarter-inch rounding, or `+ row` recommendation is used.
 
 ## Acknowledgements
 
-This volunteer tool is inspired by and aligned with **[Knitted Knockers](https://www.knittedknockers.org/)** guidance.  
-If a recipient’s size falls outside the standard chart range, the tool directs volunteers to **[contact HQ](https://www.knittedknockers.org/contact-us/)**.
-
----
-
-## License
-
-MIT © Michelle Peruskie (or your preferred license)
+This volunteer tool is based on Knitted Knockers sizing guidance. For patterns, current guidance, and sizes not covered by the chart, visit the Knitted Knockers website or contact the organization directly.
