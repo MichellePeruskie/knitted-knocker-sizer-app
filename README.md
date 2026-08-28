@@ -1,28 +1,35 @@
 # Knitted Knockers Sizer
 
-A small static web app that converts a recipient's **US or UK bra size** into the **target finished diameter** listed on the Knitted Knockers bra sizing chart.
+A small static web app that checks whether a recipient's requested Knitted Knockers cup size is appropriate for their full **US or UK bra size**.
 
-The problem it addresses is simple but important: a cup letter does not represent one fixed physical size. A B cup on a larger band can require a substantially larger finished knocker than a B cup on a smaller band. The tool lets a volunteer enter the recipient's full bra size and get the charted physical diameter directly.
+The problem it addresses is that a cup letter does not represent one fixed physical size. A B cup on a large band can have a substantially larger cup diameter than a B cup on a smaller band. At the same time, a finished knitted or crocheted Knocker should not fill the bra all the way to the underwire edge.
 
-## Source-of-truth approach
+## Sizing approach
 
-The app intentionally follows the Knitted Knockers bra sizing chart as a literal lookup table rather than attempting to improve on or extrapolate from it.
+The app uses the Knitted Knockers bra sizing chart as the source of truth for the relationship between bra size and cup diameter.
 
-- US and UK sizes are encoded exactly by chart row.
-- Each chart row maps to the published underwire diameter in inches and centimeters.
-- The result is the **target finished diameter**.
-- The app does **not** recommend extra knitted/crocheted rows.
-- The app does **not** infer unlisted bra sizes.
-- The app does **not** convert additional international sizing systems because those conversions are not part of this source chart.
-- If a size is not present in the chart, the volunteer is directed to Knitted Knockers for sizing guidance.
+The requested cup letter remains the default recommendation. The app changes that recommendation only when the charted bra diameter differs from the standard finished Knocker diameter by **more than 1 inch**.
 
-This deliberately keeps the tool close to the organization's published guidance and avoids introducing additional sizing assumptions.
+That threshold is intentionally conservative. A 1-inch total difference corresponds to roughly 1/2 inch of clearance on each side, allowing the finished Knocker to sit inside the bra rather than extending to the cup edge.
 
-## Example
+When an adjustment is needed, the app moves through the standard Knocker size ladder in 1/2-inch increments until the difference is back within the 1-inch fit range.
 
-For a charted size, the volunteer-facing result is intentionally simple:
+### Examples
 
-**Target finished diameter: 7 1/2″ (19.0 cm)**
+- **38D (US)** remains **D**. The charted bra diameter and standard D Knocker are already within the fit range.
+- **44D (US)** remains **D**, even though the charted bra diameter is larger than a standard D Knocker.
+- **44B (US)** is adjusted to **C** because the chart lists 44B at 6 1/6 inches while a standard B Knocker is about 5 inches.
+- **30B (US)** is adjusted downward to **A** because the charted bra diameter is more than 1 inch smaller than a standard B Knocker.
+
+For adjusted sizes, the app explains why the recommendation changed and shows both the charted bra diameter and the standard diameter of the requested Knocker size. This is intended to help makers understand how band size affects physical cup size.
+
+## Guardrails
+
+- US and UK bra sizes are encoded directly from the Knitted Knockers chart.
+- The app does not extrapolate bra sizes that are not on the chart.
+- The app does not add knitted or crocheted rows.
+- The app does not convert additional international sizing systems.
+- UK cup labels that do not map directly to a standard Knitted Knockers pattern-size label are not guessed; the volunteer is directed to Knitted Knockers for guidance.
 
 ## Live link
 
@@ -51,10 +58,11 @@ The app is hosted with GitHub Pages from the `main` branch. Changes committed to
 ## Technical notes
 
 - No frameworks; vanilla HTML, CSS, and JavaScript.
-- `assets/app.js` contains the chart's US and UK bra-size rows and the corresponding underwire-to-diameter values.
-- Lookup is deterministic: a charted bra size returns the diameter from its chart row.
-- No sister-size formula, cup-offset calculation, quarter-inch rounding, or `+ row` recommendation is used.
+- `assets/app.js` contains the chart's US and UK bra-size rows and underwire-to-diameter values.
+- Standard Knocker sizes are modeled in 1/2-inch increments.
+- The adjustment threshold is `> 1.0` inch, not `>= 1.0` inch.
+- No cup-offset formula, quarter-inch rounding, or `+ row` recommendation is used.
 
 ## Acknowledgements
 
-This volunteer tool is based on Knitted Knockers sizing guidance. For patterns, current guidance, and sizes not covered by the chart, visit the Knitted Knockers website or contact the organization directly.
+This volunteer tool is based on Knitted Knockers sizing guidance. For patterns, current guidance, and sizes not covered safely by the tool, visit the Knitted Knockers website or contact the organization directly.
