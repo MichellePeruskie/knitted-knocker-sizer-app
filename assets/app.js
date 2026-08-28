@@ -1,14 +1,15 @@
 /*
  * Knitted Knockers bra-size lookup and conservative outlier adjustment.
  *
- * Source of truth for bra sizing: Knitted Knockers US/UK bra sizing chart.
- * A recipient's requested cup letter remains the default recommendation.
- * The app changes the Knocker size only when the charted bra diameter and the
- * standard finished Knocker diameter differ by MORE than 1 inch.
+ * Source of truth: Knitted Knockers US/UK bra sizing chart.
+ * Explicit charted sizes are looked up directly. For common band/cup combinations
+ * that continue the same sister-size progression beyond the printed grid, the app
+ * derives the corresponding underwire row only when it remains inside the chart's
+ * published underwire range (30-60).
  *
- * This preserves approximately 1/2 inch of clearance on each side before an
- * adjustment is considered, and avoids trying to make a finished Knocker fill
- * the entire underwire/cup diameter.
+ * A recipient's requested cup remains the default recommendation. The app changes
+ * the Knocker size only when the charted bra diameter and the standard finished
+ * Knocker diameter differ by MORE than 1 inch.
  */
 
 const DIAMETER_BY_UNDERWIRE = {
@@ -68,21 +69,20 @@ const UK_BY_UNDERWIRE = {
   60: ['44GG','42H','40HH','38J','36JJ','34K','32KK']
 };
 
-/* Standard finished Knocker diameters: 1/2 inch between sizes. */
 const KNOCKER_SIZES = [
-  { label: 'AA', diameter: 4.0 },
-  { label: 'A', diameter: 4.5 },
-  { label: 'B', diameter: 5.0 },
-  { label: 'C', diameter: 5.5 },
-  { label: 'D', diameter: 6.0 },
+  { label: 'AA', diameter: 4.0, aliases: ['AA'] },
+  { label: 'A', diameter: 4.5, aliases: ['A'] },
+  { label: 'B', diameter: 5.0, aliases: ['B'] },
+  { label: 'C', diameter: 5.5, aliases: ['C'] },
+  { label: 'D', diameter: 6.0, aliases: ['D'] },
   { label: 'DD/E', diameter: 6.5, aliases: ['DD','E'] },
-  { label: 'F', diameter: 7.0 },
-  { label: 'G', diameter: 7.5 },
-  { label: 'H', diameter: 8.0 },
-  { label: 'I', diameter: 8.5 },
-  { label: 'J', diameter: 9.0 },
-  { label: 'K', diameter: 9.5 },
-  { label: 'L', diameter: 10.0 }
+  { label: 'F', diameter: 7.0, aliases: ['F','DDD'] },
+  { label: 'G', diameter: 7.5, aliases: ['G','DDDD'] },
+  { label: 'H', diameter: 8.0, aliases: ['H'] },
+  { label: 'I', diameter: 8.5, aliases: ['I'] },
+  { label: 'J', diameter: 9.0, aliases: ['J'] },
+  { label: 'K', diameter: 9.5, aliases: ['K'] },
+  { label: 'L', diameter: 10.0, aliases: ['L'] }
 ];
 
 const MAX_ACCEPTABLE_DIFFERENCE = 1.0;
@@ -104,15 +104,26 @@ function normalizeSize(value) {
   return (value || '').toUpperCase().replace(/\s+/g, '').trim();
 }
 
-function cupFromSize(size) {
-  const match = size.match(/^\d{2}([A-Z]{1,2})$/);
-  return match ? match[1] : null;
+function splitSize(size) {
+  const match = size.match(/^(\d{2})([A-Z]{1,4})$/);
+  return match ? { band: Number(match[1]), cup: match[2] } : null;
+}
+
+/* The printed US chart uses E/F/G where many US bras are labeled DD/DDD/DDDD. */
+function chartCupAlias(region, cup) {
+  if (region !== 'US') return cup;
+  if (cup === 'DD') return 'E';
+  if (cup === 'DDD') return 'F';
+  if (cup === 'DDDD') return 'G';
+  return cup;
+}
+
+function chartKeyFor(region, band, cup) {
+  return String(band) + chartCupAlias(region, cup);
 }
 
 function knockerIndexForCup(cup) {
-  return KNOCKER_SIZES.findIndex(item =>
-    item.label === cup || (item.aliases || []).includes(cup)
-  );
+  return KNOCKER_SIZES.findIndex(item => (item.aliases || []).includes(cup));
 }
 
 function formatKnockerDiameter(value) {
@@ -120,50 +131,77 @@ function formatKnockerDiameter(value) {
   return Number.isInteger(value) ? `${whole}″` : `${whole} 1/2″`;
 }
 
-function contactHQMessage() {
-  return 'That size is not listed on the Knitted Knockers sizing chart used by this tool. ' +
-    'Please <a href="https://www.knittedknockers.org/contact-us/" target="_blank" rel="noopener">contact Knitted Knockers headquarters</a> for sizing guidance rather than estimating.';
+/*
+ * Derive an underwire row only when the size follows the same sister-size
+ * progression visible in the official chart. B is the neutral point:
+ * every cup step changes the underwire by 2, while every band step changes it by 2.
+ */
+function inferUSUnderwire(band, cup) {
+  const canonical = chartCupAlias('US', cup);
+  const ladder = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P'];
+  const cupIndex = ladder.indexOf(canonical);
+  if (cupIndex < 0) return null;
+  const bIndex = ladder.indexOf('B');
+  const underwire = band + ((cupIndex - bIndex) * 2);
+  return (underwire >= 30 && underwire <= 60 && underwire % 2 === 0) ? underwire : null;
 }
 
-function unsupportedPatternCupMessage(cup, diameter) {
-  return `The bra size is listed on the Knitted Knockers chart (${diameter.inches}, ${diameter.cm.toFixed(1)} cm), ` +
-    `but the ${cup} cup designation does not map directly to one of the standard Knitted Knockers pattern-size labels used by this tool. ` +
-    'Please <a href="https://www.knittedknockers.org/contact-us/" target="_blank" rel="noopener">contact Knitted Knockers headquarters</a> rather than estimating.';
+function inferUKUnderwire(band, cup) {
+  const ladder = ['A','B','C','D','DD','E','F','FF','G','GG','H','HH','J','JJ','K','KK'];
+  const cupIndex = ladder.indexOf(cup);
+  if (cupIndex < 0) return null;
+  const bIndex = ladder.indexOf('B');
+  const underwire = band + ((cupIndex - bIndex) * 2);
+  return (underwire >= 30 && underwire <= 60 && underwire % 2 === 0) ? underwire : null;
+}
+
+function resolveUnderwire(region, band, cup) {
+  const explicit = SIZE_LOOKUP[region]?.[chartKeyFor(region, band, cup)];
+  if (explicit) return { underwire: explicit, inferred: false };
+
+  const inferred = region === 'US'
+    ? inferUSUnderwire(band, cup)
+    : region === 'UK'
+      ? inferUKUnderwire(band, cup)
+      : null;
+
+  return inferred ? { underwire: inferred, inferred: true } : null;
+}
+
+function contactHQMessage() {
+  return 'This size falls outside the sizing range supported by the Knitted Knockers chart. ' +
+    'Please <a href="https://www.knittedknockers.org/contact-us/" target="_blank" rel="noopener">contact Knitted Knockers headquarters</a> for sizing guidance.';
 }
 
 function chooseKnockerSize(requestedIndex, braDiameter) {
   let index = requestedIndex;
-
   while (Math.abs(braDiameter - KNOCKER_SIZES[index].diameter) > MAX_ACCEPTABLE_DIFFERENCE) {
     const direction = braDiameter > KNOCKER_SIZES[index].diameter ? 1 : -1;
     const next = index + direction;
     if (next < 0 || next >= KNOCKER_SIZES.length) break;
     index = next;
   }
-
   return index;
 }
 
 function recommend(region, input) {
   const size = normalizeSize(input);
-  if (!/^\d{2}[A-Z]{1,2}$/.test(size)) {
-    return { error: 'Enter a bra size exactly as written, for example 38D, 44B, or 34FF.' };
+  const parsed = splitSize(size);
+  if (!parsed) {
+    return { error: 'Enter a bra size such as 38D, 44DD, 44DDD, or 34FF.' };
   }
 
-  const lookup = SIZE_LOOKUP[region];
-  if (!lookup) return { error: 'Select US or UK sizing.' };
+  if (region !== 'US' && region !== 'UK') return { error: 'Select US or UK sizing.' };
 
-  const underwire = lookup[size];
-  if (!underwire) return { error: contactHQMessage() };
-
-  const diameter = DIAMETER_BY_UNDERWIRE[underwire];
-  const requestedCup = cupFromSize(size);
-  const requestedIndex = knockerIndexForCup(requestedCup);
-
+  const requestedIndex = knockerIndexForCup(parsed.cup);
   if (requestedIndex < 0) {
-    return { error: unsupportedPatternCupMessage(requestedCup, diameter) };
+    return { error: 'That cup designation is not currently supported by the Knitted Knockers pattern-size scale used by this tool.' };
   }
 
+  const resolved = resolveUnderwire(region, parsed.band, parsed.cup);
+  if (!resolved) return { error: contactHQMessage() };
+
+  const diameter = DIAMETER_BY_UNDERWIRE[resolved.underwire];
   const requestedKnocker = KNOCKER_SIZES[requestedIndex];
   const recommendedIndex = chooseKnockerSize(requestedIndex, diameter.inchesValue);
   const recommendedKnocker = KNOCKER_SIZES[recommendedIndex];
@@ -171,8 +209,9 @@ function recommend(region, input) {
 
   return {
     size,
-    underwire,
-    requestedCup,
+    underwire: resolved.underwire,
+    inferred: resolved.inferred,
+    requestedCup: parsed.cup,
     requestedKnocker,
     recommendedKnocker,
     adjusted,
@@ -202,9 +241,9 @@ $('#calcBtn').addEventListener('click', () => {
   if (res.adjusted) {
     html += '<div style="margin-top:10px;font-size:0.95rem;font-weight:400;line-height:1.45">' +
       '<strong>Why was this adjusted?</strong> Adjusted for the ' + res.adjustmentDirection + ' band size. ' +
-      'On the Knitted Knockers bra sizing chart, a ' + res.size + ' corresponds to a cup diameter of <strong>' +
+      'Using the Knitted Knockers sister-sizing chart, a ' + res.size + ' corresponds to a cup diameter of <strong>' +
       res.inches + '</strong> (' + res.cm.toFixed(1) + ' cm). ' +
-      'A standard Knitted Knockers ' + res.requestedCup + ' measures approximately <strong>' +
+      'A standard Knitted Knockers ' + res.requestedKnocker.label + ' measures approximately <strong>' +
       formatKnockerDiameter(res.requestedKnocker.diameter) + '</strong>. ' +
       'The ' + res.recommendedKnocker.label + ' provides a closer fit while still leaving room inside the bra.' +
       '</div>';
